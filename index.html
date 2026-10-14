@@ -151,11 +151,11 @@
                             </div>
                             <div class="form-group">
                                 <label>Monto</label>
-                                <input type="number" id="amount" placeholder="0" required>
+                                <input type="number" id="amount" placeholder="0" min="0.01" step="0.01" required>
                             </div>
                             <div class="form-group">
                                 <label>Descripción</label>
-                                <input type="text" id="description" placeholder="Descripción opcional">
+                                <input type="text" id="description" placeholder="¿En qué gastaste?" required>
                             </div>
                             <div class="form-group">
                                 <label>Fecha</label>
@@ -258,12 +258,24 @@
 
     <script>
         // Datos iniciales
-        let transactions = [
+        const defaultTransactions = [
             { id: 1, type: 'ingreso', category: 'Salario', amount: 3500000, description: 'Salario mensual', date: '2025-09-01' },
             { id: 2, type: 'gasto', category: 'Vivienda', amount: 800000, description: 'Arriendo', date: '2025-09-05' },
             { id: 3, type: 'gasto', category: 'Alimentación', amount: 450000, description: 'Mercado', date: '2025-09-10' },
             { id: 4, type: 'deuda', category: 'Tarjeta', amount: 1200000, description: 'Tarjeta de crédito', date: '2025-09-15' }
         ];
+        const transactionsStorageKey = 'dashboard-financiero-transactions';
+        let transactions = defaultTransactions;
+        try {
+            const savedTransactions = JSON.parse(localStorage.getItem(transactionsStorageKey));
+            if (Array.isArray(savedTransactions)) transactions = savedTransactions;
+        } catch (error) {
+            console.warn('No se pudieron cargar las transacciones guardadas:', error);
+        }
+
+        function saveTransactions() {
+            localStorage.setItem(transactionsStorageKey, JSON.stringify(transactions));
+        }
 
         let budgets = [
             { id: 1, category: 'Alimentación', limit: 500000 },
@@ -478,6 +490,7 @@
         function deleteTransaction(id) {
             if (!confirm('¿Estás seguro de eliminar esta transacción?')) return;
             transactions = transactions.filter(t => t.id !== id);
+            saveTransactions();
             updateMetrics();
             renderTransactions();
             renderBudgets();
@@ -614,6 +627,7 @@
                             editingId = null;
                         } else transactions.push(transaction);
 
+                        saveTransactions();
                         transactionForm.reset();
                         document.getElementById('date').value = new Date().toISOString().split('T')[0];
                         updateCategories();
